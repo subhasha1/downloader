@@ -1,7 +1,6 @@
 package com.braindigit.downloader;
 
 import java.io.File;
-import java.util.HashMap;
 
 /**
  * Braindigit
@@ -26,7 +25,7 @@ public class Downloader {
         return new From(downloader, url);
     }
 
-    static class From {
+   public static class From {
         private final Downloader downloader;
         private final String url;
 
@@ -40,7 +39,7 @@ public class Downloader {
         }
     }
 
-    static class Into {
+    public static class Into {
         private final Downloader downloader;
         private final String url;
         private final File savePath;
@@ -51,7 +50,7 @@ public class Downloader {
             this.savePath = savePath;
         }
 
-        void start() {
+        public void start() {
             start(new DownloadListener() {
                 @Override
                 public void onProgress(DownloadStatus status) {
@@ -70,7 +69,7 @@ public class Downloader {
             });
         }
 
-        void start(DownloadListener listener) {
+        public void start(DownloadListener listener) {
             FileInfo fileInfo = new FileInfo();
             fileInfo.setUrl(url);
             fileInfo.setSavePath(savePath);
