@@ -1,5 +1,9 @@
 package com.braindigit.downloader;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+
 import java.io.File;
 
 /**
@@ -12,10 +16,29 @@ public class Downloader {
     private static volatile Downloader downloader;
 
     private final DownloadManager downloadManager;
+    private final ExecuterService executerService;
+    private final Dispatcher dispatcher;
 
+    static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                default:
+                    throw new AssertionError("Unknown handler message received: " + msg.what);
+            }
+        }
+    };
 
     private Downloader() {
-        downloadManager = new DownloadManager();
+        this.downloadManager = new DownloadManager();
+        this.executerService = new ExecuterService();
+        this.dispatcher = new Dispatcher(executerService, HANDLER);
+
+    }
+
+
+    private void enque(DownloadAction downloadAction){
+        dispatcher.dispatchSubmit(downloadAction);
     }
 
     public static Downloader.From from(String url) {
@@ -25,7 +48,7 @@ public class Downloader {
         return new From(downloader, url);
     }
 
-   public static class From {
+    public static class From {
         private final Downloader downloader;
         private final String url;
 
@@ -73,7 +96,9 @@ public class Downloader {
             FileInfo fileInfo = new FileInfo();
             fileInfo.setUrl(url);
             fileInfo.setSavePath(savePath);
-            downloader.downloadManager.enque(fileInfo, listener);
+            fileInfo.setFileName("TEST");
+            DownloadAction action = new DownloadAction(fileInfo, listener);
+            downloader.enque(action);
         }
     }
 }

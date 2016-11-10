@@ -1,6 +1,9 @@
 package com.braindigit.downloader.network;
 
+import android.support.annotation.NonNull;
+
 import com.braindigit.downloader.DownloadManager;
+import com.braindigit.downloader.Utils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -14,14 +17,20 @@ import static com.braindigit.downloader.Utils.stringToLong;
  */
 
 public class RangeSupport {
-
     public RangeSupport() {
 
     }
 
+    private HttpURLConnection openConnection(@NonNull String path) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+        connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
+        return connection;
+    }
+
     public Header supportsRange(String url) {
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            HttpURLConnection connection = openConnection(url);
             connection.setRequestMethod("HEAD");
             connection.setRequestProperty("Range", DownloadManager.TEST_RANGE_SUPPORT);
             connection.connect();
@@ -41,7 +50,7 @@ public class RangeSupport {
 
     public Header supportHeaderWithIfRange(String url, String lastModified) {
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            HttpURLConnection connection = openConnection(url);
             connection.setRequestMethod("HEAD");
             connection.setRequestProperty("Range", DownloadManager.TEST_RANGE_SUPPORT);
             connection.setRequestProperty("If-Range", lastModified);

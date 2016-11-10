@@ -29,12 +29,6 @@ import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
  */
 
 public class DownloadManager {
-    public static final String TEST_RANGE_SUPPORT = "bytes=0-";
-
-    private static final String TMP_SUFFIX = ".tmp";  //temp file
-    private static final String LMF_SUFFIX = ".lmf";
-    private static final String CACHE = ".cache";
-
     private static final int EACH_RECORD_SIZE = 16; //long + long = 8 + 8
     private int RECORD_FILE_TOTAL_SIZE;
     //|*********************|
@@ -47,17 +41,18 @@ public class DownloadManager {
     //|*********************|
     private int MAX_THREADS = 3;
 
-    private final HashMap<String, String[]> currentDownloadTasks;
+    private final HashMap<String, DownloadAction> urlToActions;
 
     public DownloadManager() {
-        currentDownloadTasks = new HashMap<>();
+        urlToActions = new HashMap<>();
         RECORD_FILE_TOTAL_SIZE = MAX_THREADS * EACH_RECORD_SIZE;
     }
 
     public void enque(FileInfo info, DownloadListener listener) {
-        if (currentDownloadTasks.containsKey(info.getUrl())) {
+        if (urlToActions.containsKey(info.getUrl())) {
             return;
         }
+
         addToCurrentDownloads(info);
         DownloadType downloadType = getDownloadType(info, listener);
         try {
