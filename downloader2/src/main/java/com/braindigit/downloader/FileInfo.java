@@ -52,4 +52,17 @@ public class FileInfo {
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
+
+
+    public static class Destination {
+       public final String filePath;
+       public final String tempPath;
+       public final String lastModifiedPath;
+
+        public Destination(String filePath, String tempPath, String lastModifiedPath) {
+            this.filePath = filePath;
+            this.tempPath = tempPath;
+            this.lastModifiedPath = lastModifiedPath;
+        }
+    }
 }

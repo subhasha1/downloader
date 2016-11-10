@@ -2,7 +2,6 @@ package com.braindigit.downloader.network;
 
 import android.support.annotation.NonNull;
 
-import com.braindigit.downloader.DownloadManager;
 import com.braindigit.downloader.Utils;
 
 import java.io.IOException;
@@ -17,6 +16,8 @@ import static com.braindigit.downloader.Utils.stringToLong;
  */
 
 public class RangeSupport {
+    public static final String TEST_RANGE_SUPPORT = "bytes=0-";
+
     public RangeSupport() {
 
     }
@@ -32,7 +33,7 @@ public class RangeSupport {
         try {
             HttpURLConnection connection = openConnection(url);
             connection.setRequestMethod("HEAD");
-            connection.setRequestProperty("Range", DownloadManager.TEST_RANGE_SUPPORT);
+            connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
             connection.connect();
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
                     connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
@@ -52,7 +53,7 @@ public class RangeSupport {
         try {
             HttpURLConnection connection = openConnection(url);
             connection.setRequestMethod("HEAD");
-            connection.setRequestProperty("Range", DownloadManager.TEST_RANGE_SUPPORT);
+            connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
             connection.setRequestProperty("If-Range", lastModified);
             connection.connect();
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&

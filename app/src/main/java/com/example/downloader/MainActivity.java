@@ -34,41 +34,28 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new DownloadTask().execute();
+                progressBar.setVisibility(View.VISIBLE);
+                textView.setVisibility(View.GONE);
+                button.setVisibility(View.GONE);
+                Downloader.from("https://scontent-sin6-1.xx.fbcdn.net/v/t1.0-9/14980568_1153383811382004_7401565203278646031_n.jpg?oh=0aa9437f90242b2dd5b27ecd9c7525ad&oe=58CC44D6").
+                        into(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
+                        .start(new DownloadListener() {
+                            @Override
+                            public void onProgress(DownloadStatus status) {
+
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+
+                            }
+                        });
             }
         });
-    }
-
-    class DownloadTask extends AsyncTask<Void, Void, Object> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            progressBar.setVisibility(View.VISIBLE);
-            textView.setVisibility(View.GONE);
-            button.setVisibility(View.GONE);
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            Downloader.from("https://raw.githubusercontent.com/googlesamples/android-architecture/todo-mvp-dagger/todoapp/app/src/main/java/com/example/android/architecture/blueprints/todoapp/ApplicationModule.java").
-                    into(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
-                    .start(new DownloadListener() {
-                        @Override
-                        public void onProgress(DownloadStatus status) {
-
-                        }
-
-                        @Override
-                        public void onComplete() {
-
-                        }
-
-                        @Override
-                        public void onError(Exception e) {
-
-                        }
-                    });
-            return null;
-        }
     }
 }

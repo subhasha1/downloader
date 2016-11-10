@@ -27,8 +27,10 @@ public class Dispatcher {
     final Map<String, DownloadRunnable> downloaderMap;
     final DispatcherHandler handler;
     private final Handler mainThreadHandler;
+    private final Downloader downloader;
 
-    public Dispatcher(ExecuterService service, Handler mainThreadHandler) {
+    public Dispatcher(Downloader downloader, ExecuterService service, Handler mainThreadHandler) {
+        this.downloader = downloader;
         this.dispatcherThread = new DispatcherThread();
         this.dispatcherThread.start();
         this.service = service;
@@ -42,7 +44,7 @@ public class Dispatcher {
     }
 
     public void performSubmit(DownloadAction downloadAction) {
-        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloadAction);
+        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloader, mainThreadHandler, this, downloadAction);
         service.execute(downloadRunnable);
     }
 

@@ -3,6 +3,7 @@ package com.braindigit.downloader;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.File;
 
@@ -12,10 +13,12 @@ import java.io.File;
  */
 
 public class Downloader {
+    public static final int DOWNLOAD_PROGRESS = 1;
+    public static final int DOWNLOAD_COMPLETE = 2;
+    public static final int DOWNLOAD_FAILED = 3;
 
     private static volatile Downloader downloader;
 
-    private final DownloadManager downloadManager;
     private final ExecuterService executerService;
     private final Dispatcher dispatcher;
 
@@ -23,6 +26,12 @@ public class Downloader {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
+                case DOWNLOAD_PROGRESS:
+                    System.out.print("DP");
+                    break;
+                case DOWNLOAD_COMPLETE:
+                    System.out.print("DC");
+                    break;
                 default:
                     throw new AssertionError("Unknown handler message received: " + msg.what);
             }
@@ -30,14 +39,11 @@ public class Downloader {
     };
 
     private Downloader() {
-        this.downloadManager = new DownloadManager();
         this.executerService = new ExecuterService();
-        this.dispatcher = new Dispatcher(executerService, HANDLER);
-
+        this.dispatcher = new Dispatcher(this, executerService, HANDLER);
     }
 
-
-    private void enque(DownloadAction downloadAction){
+    private void enque(DownloadAction downloadAction) {
         dispatcher.dispatchSubmit(downloadAction);
     }
 

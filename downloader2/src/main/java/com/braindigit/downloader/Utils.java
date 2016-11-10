@@ -12,6 +12,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.HttpURLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,8 +30,8 @@ import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
 public class Utils {
     static final String THREAD_PREFIX = "LoadTask-";
 
-    public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 15*1000;
-    public static final int DEFAULT_READ_TIMEOUT_MILLIS = 15*1000;
+    public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 15 * 1000;
+    public static final int DEFAULT_READ_TIMEOUT_MILLIS = 15 * 1000;
 
     public static void writeLastModify(File lastModifiedFile, String lastModify) throws IOException, ParseException {
         RandomAccessFile record = null;
@@ -51,6 +52,10 @@ public class Utils {
         } catch (NumberFormatException e) {
             return -1;
         }
+    }
+
+    public static String transferEncoding(HttpURLConnection response) {
+        return response.getHeaderField("Transfer-Encoding");
     }
 
     static String longToGMT(long lastModify) {
@@ -92,7 +97,8 @@ public class Utils {
             super(r);
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             Process.setThreadPriority(THREAD_PRIORITY_BACKGROUND);
             super.run();
         }

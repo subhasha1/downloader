@@ -1,8 +1,10 @@
 package com.braindigit.downloader.types;
 
-import com.braindigit.downloader.DownloadListener;
-import com.braindigit.downloader.DownloadManager;
+import android.os.Handler;
+
+import com.braindigit.downloader.DownloadAction;
 import com.braindigit.downloader.DownloadStatus;
+import com.braindigit.downloader.Downloader;
 import com.braindigit.downloader.FileInfo;
 
 import java.io.IOException;
@@ -14,14 +16,17 @@ import java.text.ParseException;
  */
 
 public abstract class DownloadType {
-    final FileInfo fileInfo;
-    final DownloadManager downloadManager;
-    final DownloadListener downloadListener;
+    final DownloadAction downloadAction;
+    final Downloader downloader;
+    final Handler mainThreadHandler;
+    final FileInfo.Destination destination;
 
-    public DownloadType(FileInfo fileInfo, DownloadManager downloadManager, DownloadListener downloadListener) {
-        this.fileInfo = fileInfo;
-        this.downloadManager = downloadManager;
-        this.downloadListener = downloadListener;
+    public DownloadType(Downloader downloader, Handler mainThreadHandler,
+                        FileInfo.Destination destination, DownloadAction downloadAction) {
+        this.downloader = downloader;
+        this.mainThreadHandler = mainThreadHandler;
+        this.destination = destination;
+        this.downloadAction = downloadAction;
     }
 
     public abstract void prepareDownload() throws IOException, ParseException;
