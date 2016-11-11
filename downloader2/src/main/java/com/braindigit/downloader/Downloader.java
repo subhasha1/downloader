@@ -3,9 +3,10 @@ package com.braindigit.downloader;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Braindigit
@@ -19,19 +20,26 @@ public class Downloader {
 
     private static volatile Downloader downloader;
 
-    private final ExecuterService executerService;
-    private final Dispatcher dispatcher;
+    private final ExecutorService executorService;
+    final Dispatcher dispatcher;
+    final Map<String, DownloadRunnable> downloaderMap;
+
 
     static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case DOWNLOAD_PROGRESS:
-                    System.out.print("DP");
+                    ActionStatus as = (ActionStatus) msg.obj;
+                    as.downloadAction.performProgress(as.downloadStatus);
                     break;
                 case DOWNLOAD_COMPLETE:
-                    System.out.print("DC");
+                    ActionStatus as1 = (ActionStatus) msg.obj;
+                    as1.downloadAction.performComplete();
                     break;
+                case DOWNLOAD_FAILED:
+                    ActionStatus as2 = (ActionStatus) msg.obj;
+                    as2.downloadAction.performError(as2.e);
                 default:
                     throw new AssertionError("Unknown handler message received: " + msg.what);
             }
@@ -39,11 +47,12 @@ public class Downloader {
     };
 
     private Downloader() {
-        this.executerService = new ExecuterService();
-        this.dispatcher = new Dispatcher(this, executerService, HANDLER);
+        this.downloaderMap = new HashMap<>();
+        this.executorService = new ExecutorService();
+        this.dispatcher = new Dispatcher(this, executorService, HANDLER);
     }
 
-    private void enque(DownloadAction downloadAction) {
+    private void enqueue(DownloadAction downloadAction) {
         dispatcher.dispatchSubmit(downloadAction);
     }
 
@@ -79,32 +88,14 @@ public class Downloader {
             this.savePath = savePath;
         }
 
-        public void start() {
-            start(new DownloadListener() {
-                @Override
-                public void onProgress(DownloadStatus status) {
-
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-
-                @Override
-                public void onError(Exception e) {
-
-                }
-            });
-        }
-
-        public void start(DownloadListener listener) {
+        public DownloadAction start(DownloadListener listener) {
             FileInfo fileInfo = new FileInfo();
             fileInfo.setUrl(url);
             fileInfo.setSavePath(savePath);
-            fileInfo.setFileName("TEST");
-            DownloadAction action = new DownloadAction(fileInfo, listener);
-            downloader.enque(action);
+            fileInfo.setFileName("ass.jpg");
+            DownloadAction action = new DownloadAction(HANDLER, fileInfo, listener);
+            downloader.enqueue(action);
+            return action;
         }
     }
 }

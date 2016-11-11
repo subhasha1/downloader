@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.braindigit.downloader.Dispatcher;
 import com.braindigit.downloader.DownloadAction;
 import com.braindigit.downloader.DownloadStatus;
 import com.braindigit.downloader.Downloader;
@@ -32,8 +33,9 @@ public class DownloadTypeNormal extends DownloadType {
     private static final String TAG = "DOWNLOAD_TYPE_NORMAL";
 
     public DownloadTypeNormal(Downloader downloader, Handler mainThreadHandler,
-                              FileInfo.Destination destination, DownloadAction downloadAction) {
-        super(downloader, mainThreadHandler, destination, downloadAction);
+                              FileInfo.Destination destination, DownloadAction downloadAction,
+                              Dispatcher dispatcher) {
+        super(downloader, mainThreadHandler, destination, downloadAction, dispatcher);
     }
 
     @Override
@@ -49,7 +51,7 @@ public class DownloadTypeNormal extends DownloadType {
     }
 
     @Override
-    public DownloadStatus startDownload() throws IOException {
+    public void startDownload() throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(downloadAction.getFileInfo().getUrl()).openConnection();
         connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
         connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
@@ -74,22 +76,23 @@ public class DownloadTypeNormal extends DownloadType {
                 status.setTotalSize(contentLength);
 
                 while ((readLen = inputStream.read(buffer)) != -1) {
+                    if (downloadAction.isCancelled()) {
+                        return;
+                    }
                     outputStream.write(buffer, 0, readLen);
                     downloadSize += readLen;
                     status.setDownloadSize(downloadSize);
-                    mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(Downloader.DOWNLOAD_PROGRESS, status));
+                    downloadAction.onProgress(status);
                 }
                 outputStream.flush(); // This is important!!!
-                mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(Downloader.DOWNLOAD_COMPLETE,status));
+                downloadAction.onComplete();
                 Log.i(TAG, "Normal download completed!");
             } finally {
                 Utils.close(inputStream);
                 Utils.close(outputStream);
             }
         } catch (IOException e) {
-            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(Downloader.DOWNLOAD_FAILED,
-                    new Throwable("Normal download stopped! Failed to save normal file!", e)));
+            downloadAction.onError(e);
         }
-        return null;
     }
 }

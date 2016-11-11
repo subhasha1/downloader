@@ -1,6 +1,5 @@
 package com.braindigit.downloader;
 
-import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -23,18 +22,16 @@ public class Dispatcher {
     static final int REQUEST_CANCEL = 2;
 
     final DispatcherThread dispatcherThread;
-    final ExecuterService service;
-    final Map<String, DownloadRunnable> downloaderMap;
+    final ExecutorService service;
     final DispatcherHandler handler;
     private final Handler mainThreadHandler;
     private final Downloader downloader;
 
-    public Dispatcher(Downloader downloader, ExecuterService service, Handler mainThreadHandler) {
+    public Dispatcher(Downloader downloader, ExecutorService service, Handler mainThreadHandler) {
         this.downloader = downloader;
         this.dispatcherThread = new DispatcherThread();
         this.dispatcherThread.start();
         this.service = service;
-        this.downloaderMap = new LinkedHashMap<>();
         this.mainThreadHandler = mainThreadHandler;
         this.handler = new DispatcherHandler(dispatcherThread.getLooper(), this);
     }
@@ -43,9 +40,17 @@ public class Dispatcher {
         handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, downloadAction));
     }
 
+    public void enqueueChunk(ChunkInfo chunkInfo) {
+        ChunkDownloadRunnable chunkDownloadRunnable =
+                new ChunkDownloadRunnable(downloader, chunkInfo.downloadAction,
+                        mainThreadHandler, chunkInfo);
+        service.submit(chunkDownloadRunnable);
+    }
+
     public void performSubmit(DownloadAction downloadAction) {
-        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloader, mainThreadHandler, this, downloadAction);
-        service.execute(downloadRunnable);
+        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloader, mainThreadHandler,
+                this, downloadAction);
+        service.submit(downloadRunnable);
     }
 
     private static class DispatcherHandler extends Handler {

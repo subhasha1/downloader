@@ -34,13 +34,13 @@ public class RangeSupport {
             HttpURLConnection connection = openConnection(url);
             connection.setRequestMethod("HEAD");
             connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
-            connection.connect();
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
                     connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
                 Header header = new Header();
                 header.setContentLength(stringToLong(connection.getHeaderField(Header.CONTENT_LENGTH)));
                 header.setContentRange(connection.getHeaderField(Header.CONTENT_RANGE));
                 header.setLastModified(connection.getHeaderField(Header.LAST_MODIFIED));
+                header.setResponseCode(connection.getResponseCode());
                 return header;
             }
         } catch (IOException e) {
@@ -55,7 +55,6 @@ public class RangeSupport {
             connection.setRequestMethod("HEAD");
             connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
             connection.setRequestProperty("If-Range", lastModified);
-            connection.connect();
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
                     connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
                 Header header = new Header();

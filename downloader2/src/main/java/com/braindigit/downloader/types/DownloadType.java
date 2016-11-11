@@ -2,6 +2,7 @@ package com.braindigit.downloader.types;
 
 import android.os.Handler;
 
+import com.braindigit.downloader.Dispatcher;
 import com.braindigit.downloader.DownloadAction;
 import com.braindigit.downloader.DownloadStatus;
 import com.braindigit.downloader.Downloader;
@@ -20,16 +21,19 @@ public abstract class DownloadType {
     final Downloader downloader;
     final Handler mainThreadHandler;
     final FileInfo.Destination destination;
+    final Dispatcher dispatcher;
 
     public DownloadType(Downloader downloader, Handler mainThreadHandler,
-                        FileInfo.Destination destination, DownloadAction downloadAction) {
+                        FileInfo.Destination destination, DownloadAction downloadAction,
+                        Dispatcher dispatcher) {
         this.downloader = downloader;
         this.mainThreadHandler = mainThreadHandler;
         this.destination = destination;
         this.downloadAction = downloadAction;
+        this.dispatcher = dispatcher;
     }
 
     public abstract void prepareDownload() throws IOException, ParseException;
 
-    public abstract DownloadStatus startDownload() throws IOException;
+    public abstract void startDownload() throws IOException;
 }
