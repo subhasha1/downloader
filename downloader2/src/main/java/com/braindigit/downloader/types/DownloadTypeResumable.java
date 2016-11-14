@@ -51,7 +51,7 @@ public class DownloadTypeResumable extends DownloadType {
         DownloadRange range = getDownloadRange();
         for (int i = 0; i < MAX_THREADS; i++) {
             if (range.start[i] <= range.end[i]) {
-                dispatcher.enqueueChunk(new ChunkInfo(downloadAction.getFileInfo(),
+                dispatcher.dispatchSubmit(new ChunkInfo(downloadAction.getFileInfo(),
                         destination, range.start[i],range.end[i], i, downloadAction));
             }
         }

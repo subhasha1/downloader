@@ -28,7 +28,7 @@ public class ExecutorService extends ThreadPoolExecutor {
 
 
     private static final class DownloadFutureTask extends FutureTask<PriorityRunnable>
-            implements Comparable<PriorityRunnable> {
+            implements Comparable<DownloadFutureTask> {
         private final PriorityRunnable runnable;
 
         public DownloadFutureTask(PriorityRunnable runnable) {
@@ -37,8 +37,8 @@ public class ExecutorService extends ThreadPoolExecutor {
         }
 
         @Override
-        public int compareTo(PriorityRunnable runnable) {
-            return runnable.getPriority() - this.runnable.getPriority();
+        public int compareTo(DownloadFutureTask downloadFutureTask) {
+            return downloadFutureTask.runnable.getPriority() - this.runnable.getPriority();
         }
     }
 }

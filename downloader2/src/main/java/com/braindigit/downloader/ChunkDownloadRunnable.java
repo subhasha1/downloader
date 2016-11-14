@@ -9,7 +9,6 @@ import com.braindigit.downloader.types.DownloadTypeResumable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -54,7 +53,8 @@ public class ChunkDownloadRunnable implements PriorityRunnable {
             HttpURLConnection connection = (HttpURLConnection) new URL(chunkInfo.fileInfo.getUrl()).openConnection();
             connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
             connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
-
+            connection.setRequestProperty("Range", "bytes=" + chunkInfo.start + "-" + chunkInfo.end);
+            connection.setRequestProperty("Connection", "close");
             RandomAccessFile record = null;
             FileChannel recordChannel = null;
 
@@ -100,10 +100,13 @@ public class ChunkDownloadRunnable implements PriorityRunnable {
                 Utils.close(save);
                 Utils.close(saveChannel);
                 Utils.close(inStream);
+                connection.disconnect();
+                Log.i(TAG, Thread.currentThread().getName() + " closed thread!");
             }
         } catch (MalformedURLException e) {
             action.onError(e);
         } catch (IOException e) {
+            Log.i(TAG, Thread.currentThread().getName() + " Range download stopped! Failed to save range file!");
             action.onError(new Exception(new Throwable("Range download stopped! Failed to save range file!", e)));
         }
     }

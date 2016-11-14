@@ -55,6 +55,7 @@ public class DownloadTypeNormal extends DownloadType {
         HttpURLConnection connection = (HttpURLConnection) new URL(downloadAction.getFileInfo().getUrl()).openConnection();
         connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
         connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
+        connection.setRequestProperty("Connection", "close");
 
         InputStream inputStream = null;
         OutputStream outputStream = null;
@@ -90,6 +91,7 @@ public class DownloadTypeNormal extends DownloadType {
             } finally {
                 Utils.close(inputStream);
                 Utils.close(outputStream);
+                connection.disconnect();
             }
         } catch (IOException e) {
             downloadAction.onError(e);

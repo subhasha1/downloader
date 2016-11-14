@@ -20,6 +20,7 @@ public class Dispatcher {
 
     static final int REQUEST_SUBMIT = 1;
     static final int REQUEST_CANCEL = 2;
+    static final int REQUEST_CHUNK_SUBMIT = 3;
 
     final DispatcherThread dispatcherThread;
     final ExecutorService service;
@@ -40,17 +41,21 @@ public class Dispatcher {
         handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, downloadAction));
     }
 
-    public void enqueueChunk(ChunkInfo chunkInfo) {
+    public void dispatchSubmit(ChunkInfo chunkInfo) {
+        handler.sendMessage(handler.obtainMessage(REQUEST_CHUNK_SUBMIT, chunkInfo));
+    }
+
+    void performSubmit(DownloadAction downloadAction) {
+        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloader, mainThreadHandler,
+                this, downloadAction);
+        service.submit(downloadRunnable);
+    }
+
+    void performSubmit(ChunkInfo chunkInfo) {
         ChunkDownloadRunnable chunkDownloadRunnable =
                 new ChunkDownloadRunnable(downloader, chunkInfo.downloadAction,
                         mainThreadHandler, chunkInfo);
         service.submit(chunkDownloadRunnable);
-    }
-
-    public void performSubmit(DownloadAction downloadAction) {
-        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloader, mainThreadHandler,
-                this, downloadAction);
-        service.submit(downloadRunnable);
     }
 
     private static class DispatcherHandler extends Handler {
@@ -67,6 +72,11 @@ public class Dispatcher {
                 case REQUEST_SUBMIT: {
                     DownloadAction action = (DownloadAction) msg.obj;
                     dispatcher.performSubmit(action);
+                    break;
+                }
+                case REQUEST_CHUNK_SUBMIT: {
+                    ChunkInfo chunkInfo = (ChunkInfo) msg.obj;
+                    dispatcher.performSubmit(chunkInfo);
                     break;
                 }
                 default:

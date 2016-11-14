@@ -24,16 +24,18 @@ public class RangeSupport {
 
     private HttpURLConnection openConnection(@NonNull String path) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+        connection.setRequestMethod("HEAD");
+        connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
         connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
         connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
+        connection.setRequestProperty("Connection", "close");
         return connection;
     }
 
     public Header supportsRange(String url) {
+        HttpURLConnection connection = null;
         try {
-            HttpURLConnection connection = openConnection(url);
-            connection.setRequestMethod("HEAD");
-            connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
+            connection = openConnection(url);
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
                     connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
                 Header header = new Header();
@@ -45,15 +47,17 @@ public class RangeSupport {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (connection != null)
+                connection.disconnect();
         }
         return null;
     }
 
     public Header supportHeaderWithIfRange(String url, String lastModified) {
+        HttpURLConnection connection = null;
         try {
-            HttpURLConnection connection = openConnection(url);
-            connection.setRequestMethod("HEAD");
-            connection.setRequestProperty("Range", TEST_RANGE_SUPPORT);
+            connection = openConnection(url);
             connection.setRequestProperty("If-Range", lastModified);
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
                     connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
@@ -66,6 +70,9 @@ public class RangeSupport {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (connection != null)
+                connection.disconnect();
         }
         return null;
     }

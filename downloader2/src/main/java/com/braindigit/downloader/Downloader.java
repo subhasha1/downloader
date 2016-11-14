@@ -40,6 +40,7 @@ public class Downloader {
                 case DOWNLOAD_FAILED:
                     ActionStatus as2 = (ActionStatus) msg.obj;
                     as2.downloadAction.performError(as2.e);
+                    break;
                 default:
                     throw new AssertionError("Unknown handler message received: " + msg.what);
             }
@@ -92,7 +93,7 @@ public class Downloader {
             FileInfo fileInfo = new FileInfo();
             fileInfo.setUrl(url);
             fileInfo.setSavePath(savePath);
-            fileInfo.setFileName("ass.jpg");
+            fileInfo.setFileName("asster.jpg");
             DownloadAction action = new DownloadAction(HANDLER, fileInfo, listener);
             downloader.enqueue(action);
             return action;
