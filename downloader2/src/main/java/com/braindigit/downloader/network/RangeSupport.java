@@ -60,40 +60,45 @@ public class RangeSupport {
     }
 
     public Header supportHeaderWithIfRange(String url, String lastModified) {
-        return supportHeaderWithIfRangeOkHttp(url,lastModified);
-//        HttpURLConnection connection = null;
-//        try {
-//            connection = openConnection(url);
-//            connection.setRequestProperty("If-Range", lastModified);
-//            if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
-//                    connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
-//                Header header = new Header();
-//                header.setContentLength(stringToLong(connection.getHeaderField(Header.CONTENT_LENGTH)));
-//                header.setContentRange(connection.getHeaderField(Header.CONTENT_RANGE));
-//                header.setLastModified(connection.getHeaderField(Header.LAST_MODIFIED));
-//                header.setResponseCode(connection.getResponseCode());
-//                return header;
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (connection != null)
-//                connection.disconnect();
-//        }
-//        return null;
+//        return supportHeaderWithIfRangeOkHttp(url, lastModified);
+        HttpURLConnection connection = null;
+        try {
+            connection = openConnection(url);
+            connection.setRequestProperty("If-Range", lastModified);
+            if (connection.getResponseCode() >= HttpURLConnection.HTTP_OK &&
+                    connection.getResponseCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
+                Header header = new Header();
+                header.setContentLength(stringToLong(connection.getHeaderField(Header.CONTENT_LENGTH)));
+                header.setContentRange(connection.getHeaderField(Header.CONTENT_RANGE));
+                header.setLastModified(connection.getHeaderField(Header.LAST_MODIFIED));
+                header.setResponseCode(connection.getResponseCode());
+                return header;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (connection != null)
+                connection.disconnect();
+        }
+        return null;
     }
 
+    public Request.Builder getRequestBuilder(String url) {
+        return new Request.Builder()
+                .head()
+                .header("Range",TEST_RANGE_SUPPORT)
+                .url(url);
+    }
 
     public Header supportHeaderWithIfRangeOkHttp(String url, String lastModified) {
         OkHttpClient client = new OkHttpClient();
 
-        Request request = new Request.Builder()
-                .url(url)
+        Request request = getRequestBuilder(url)
+                .header("If-Range", lastModified)
                 .build();
 
-        Response response = null;
         try {
-            response = client.newCall(request).execute();
+            Response response = client.newCall(request).execute();
             Headers responseHeaders = response.headers();
             Header header = new Header();
             header.setContentLength(stringToLong(responseHeaders.get(Header.CONTENT_LENGTH)));

@@ -93,7 +93,7 @@ public class Downloader {
             FileInfo fileInfo = new FileInfo();
             fileInfo.setUrl(url);
             fileInfo.setSavePath(savePath);
-            fileInfo.setFileName("asster.jpg");
+            fileInfo.setFileName("200mb.zip");
             DownloadAction action = new DownloadAction(HANDLER, fileInfo, listener);
             downloader.enqueue(action);
             return action;

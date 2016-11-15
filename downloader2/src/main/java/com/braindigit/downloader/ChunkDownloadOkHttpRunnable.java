@@ -56,17 +56,10 @@ public class ChunkDownloadOkHttpRunnable implements PriorityRunnable {
             return;
         final OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
-                .url("https://api.github.com/markdown/raw")
-                .get()
+                .url(chunkInfo.fileInfo.getUrl())
+                .addHeader("Range","bytes=" + chunkInfo.start + "-" + chunkInfo.end)
                 .build();
         try {
-            Response response = client.newCall(request).execute();
-
-            HttpURLConnection connection = (HttpURLConnection) new URL(chunkInfo.fileInfo.getUrl()).openConnection();
-            connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
-            connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
-            connection.setRequestProperty("Range", "bytes=" + chunkInfo.start + "-" + chunkInfo.end);
-            connection.setRequestProperty("Connection", "close");
             RandomAccessFile record = null;
             FileChannel recordChannel = null;
 
@@ -90,7 +83,9 @@ public class ChunkDownloadOkHttpRunnable implements PriorityRunnable {
                 saveChannel = save.getChannel();
                 MappedByteBuffer saveBuffer = saveChannel.map(READ_WRITE, chunkInfo.start, chunkInfo.end - chunkInfo.start + 1);
 
-                inStream = connection.getInputStream();
+                Response response = client.newCall(request).execute();
+
+                inStream = response.body().byteStream();
                 while ((readLen = inStream.read(buffer)) != -1) {
                     saveBuffer.put(buffer, 0, readLen);
                     recordBuffer.putLong(chunkInfo.rangeIndex * EACH_RECORD_SIZE, recordBuffer.getLong(chunkInfo.rangeIndex * EACH_RECORD_SIZE) + readLen);
@@ -102,7 +97,7 @@ public class ChunkDownloadOkHttpRunnable implements PriorityRunnable {
                         action.onProgress(status);
                 }
                 Log.i(TAG, Thread.currentThread().getName() + " complete download! Download size is " +
-                        stringToLong(connection.getHeaderField(Header.CONTENT_LENGTH) + " bytes"));
+                        stringToLong(response.header(Header.CONTENT_LENGTH) + " bytes"));
                 if (status.getTotalSize() == status.getDownloadSize() && !action.isCancelled()) {
                     action.onComplete();
                 }
@@ -112,7 +107,6 @@ public class ChunkDownloadOkHttpRunnable implements PriorityRunnable {
                 Utils.close(save);
                 Utils.close(saveChannel);
                 Utils.close(inStream);
-                connection.disconnect();
                 Log.i(TAG, Thread.currentThread().getName() + " closed thread!");
             }
         } catch (MalformedURLException e) {
