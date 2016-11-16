@@ -1,5 +1,6 @@
 package com.braindigit.downloader;
 
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -22,7 +23,7 @@ public class Downloader {
 
     private final ExecutorService executorService;
     final Dispatcher dispatcher;
-    final Map<String, DownloadRunnable> downloaderMap;
+    final Map<String, DownloadHunter> downloaderMap;
 
 
     static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
@@ -31,15 +32,15 @@ public class Downloader {
             switch (msg.what) {
                 case DOWNLOAD_PROGRESS:
                     ActionStatus as = (ActionStatus) msg.obj;
-                    as.downloadAction.performProgress(as.downloadStatus);
+                    as.downloadRequest.performProgress(as.downloadStatus);
                     break;
                 case DOWNLOAD_COMPLETE:
                     ActionStatus as1 = (ActionStatus) msg.obj;
-                    as1.downloadAction.performComplete();
+                    as1.downloadRequest.performComplete();
                     break;
                 case DOWNLOAD_FAILED:
                     ActionStatus as2 = (ActionStatus) msg.obj;
-                    as2.downloadAction.performError(as2.e);
+                    as2.downloadRequest.performError(as2.e);
                     break;
                 default:
                     throw new AssertionError("Unknown handler message received: " + msg.what);
@@ -50,53 +51,19 @@ public class Downloader {
     private Downloader() {
         this.downloaderMap = new HashMap<>();
         this.executorService = new ExecutorService();
-        this.dispatcher = new Dispatcher(this, executorService, HANDLER);
+        NetworkHelper networkHelper = Utils.createDefaultNetworkHelper();
+        this.dispatcher = new Dispatcher(this, executorService, HANDLER, networkHelper);
     }
 
-    private void enqueue(DownloadAction downloadAction) {
-        dispatcher.dispatchSubmit(downloadAction);
+    void enqueue(DownloadRequest downloadRequest) {
+        dispatcher.dispatchSubmit(downloadRequest);
     }
 
-    public static Downloader.From from(String url) {
+    public static DownloadRequestCreator from(String url) {
         if (downloader == null) {
             downloader = new Downloader();
         }
-        return new From(downloader, url);
-    }
-
-    public static class From {
-        private final Downloader downloader;
-        private final String url;
-
-        private From(Downloader downloader, String url) {
-            this.downloader = downloader;
-            this.url = url;
-        }
-
-        public Downloader.Into into(File file) {
-            return new Into(downloader, url, file);
-        }
-    }
-
-    public static class Into {
-        private final Downloader downloader;
-        private final String url;
-        private final File savePath;
-
-        private Into(Downloader downloader, String url, File savePath) {
-            this.downloader = downloader;
-            this.url = url;
-            this.savePath = savePath;
-        }
-
-        public DownloadAction start(DownloadListener listener) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setUrl(url);
-            fileInfo.setSavePath(savePath);
-            fileInfo.setFileName("200mb.zip");
-            DownloadAction action = new DownloadAction(HANDLER, fileInfo, listener);
-            downloader.enqueue(action);
-            return action;
-        }
+        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        return new DownloadRequestCreator(downloader, url, path);
     }
 }

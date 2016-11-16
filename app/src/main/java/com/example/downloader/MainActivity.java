@@ -1,15 +1,14 @@
 package com.example.downloader;
 
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.braindigit.downloader.DownloadAction;
 import com.braindigit.downloader.DownloadListener;
+import com.braindigit.downloader.DownloadRequest;
 import com.braindigit.downloader.DownloadStatus;
 import com.braindigit.downloader.Downloader;
 
@@ -19,8 +18,7 @@ public class MainActivity extends AppCompatActivity {
     TextView textView;
     Button buttonStart, buttonPause;
     ProgressBar progressBar;
-    DownloadAction downloadAction;
-
+    DownloadRequest downloadRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,9 +37,9 @@ public class MainActivity extends AppCompatActivity {
                 progressBar.setProgress(0);
                 progressBar.setMax(100);
                 progressBar.setVisibility(View.VISIBLE);
-                downloadAction = Downloader.from("http://s9.postimg.org/n92phj9tr/DSC_0155.jpg").
-                        into(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
-                        .start(new DownloadListener() {
+                downloadRequest = Downloader.from("https://upload.wikimedia.org/wikipedia/commons/e/e0/Large_Scaled_Forest_Lizard.jpg")
+                        .fileName("image.jpg")
+                        .listener(new DownloadListener() {
                             @Override
                             public void onProgress(DownloadStatus status) {
                                 textView.setText(formatSize(status.getTotalSize()) + "/" + formatSize(status.getDownloadSize()));
@@ -60,15 +58,15 @@ public class MainActivity extends AppCompatActivity {
                                 progressBar.setVisibility(View.GONE);
                                 textView.setText(e.toString());
                             }
-                        });
+                        }).download();
             }
         });
         buttonPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (downloadAction != null) {
-                    downloadAction.cancel();
-                    downloadAction = null;
+                if (downloadRequest != null) {
+                    downloadRequest.cancel();
+                    downloadRequest = null;
                     buttonStart.setEnabled(true);
                     buttonPause.setEnabled(false);
                     textView.setText("Paused");
@@ -79,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
 
     static String formatSize(long size) {
         String hrSize;
-
         double b = size;
         double k = size / 1024.0;
         double m = ((size / 1024.0) / 1024.0);

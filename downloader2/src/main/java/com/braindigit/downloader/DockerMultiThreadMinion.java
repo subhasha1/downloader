@@ -3,16 +3,11 @@ package com.braindigit.downloader;
 import android.os.Handler;
 import android.util.Log;
 
-import com.braindigit.downloader.network.Header;
-import com.braindigit.downloader.types.DownloadTypeResumable;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -21,40 +16,40 @@ import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
 /**
  * Braindigit
- * Created on 11/10/16.
+ * Created on 11/16/16.
  */
 
-public class ChunkDownloadRunnable implements PriorityRunnable {
-
-    private static final String TAG = "ChunkDownloadRunnable";
+class DockerMultiThreadMinion implements PriorityRunnable {
+    private static final String TAG = "DockerMultiThreadMinion";
 
     private final Downloader downloader;
-    private final DownloadAction action;
+    private final DownloadRequest action;
     private final Handler mainThreadHandler;
     private final ChunkInfo chunkInfo;
-    private final int EACH_RECORD_SIZE = DownloadTypeResumable.EACH_RECORD_SIZE;
+    private final NetworkHelper networkHelper;
+
+    private final int EACH_RECORD_SIZE = DockerResumable.EACH_RECORD_SIZE;
     private final int RECORD_FILE_TOTAL_SIZE = ExecutorService.DEFAULT_THREAD_COUNT *
-            DownloadTypeResumable.EACH_RECORD_SIZE;
+            DockerResumable.EACH_RECORD_SIZE;
 
-
-    ChunkDownloadRunnable(Downloader downloader, DownloadAction action,
-                          Handler mainThreadHandler, ChunkInfo chunkInfo) {
+    DockerMultiThreadMinion(Downloader downloader, DownloadRequest action,
+                            Handler mainThreadHandler, ChunkInfo chunkInfo,
+                            NetworkHelper networkHelper) {
         this.downloader = downloader;
         this.action = action;
         this.mainThreadHandler = mainThreadHandler;
         this.chunkInfo = chunkInfo;
+        this.networkHelper = networkHelper;
     }
 
     @Override
     public void run() {
-        if(action.isCancelled())
+        if (action.isCancelled())
             return;
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(chunkInfo.fileInfo.getUrl()).openConnection();
-            connection.setConnectTimeout(Utils.DEFAULT_CONNECT_TIMEOUT_MILLIS);
-            connection.setReadTimeout(Utils.DEFAULT_READ_TIMEOUT_MILLIS);
-            connection.setRequestProperty("Range", "bytes=" + chunkInfo.start + "-" + chunkInfo.end);
-            connection.setRequestProperty("Connection", "close");
+            NetworkHelper.Response response = networkHelper
+                    .download("bytes=" + chunkInfo.start + "-" + chunkInfo.end, chunkInfo.fileInfo.getUrl());
+
             RandomAccessFile record = null;
             FileChannel recordChannel = null;
 
@@ -63,7 +58,8 @@ public class ChunkDownloadRunnable implements PriorityRunnable {
 
             InputStream inStream = null;
             try {
-                Log.i(TAG, Thread.currentThread().getName() + " start download from " + chunkInfo.start + " to " + chunkInfo.end + "!");
+                Log.i(TAG, Thread.currentThread().getName() + " start download from "
+                        + chunkInfo.start + " to " + chunkInfo.end + "!");
                 int readLen;
                 byte[] buffer = new byte[8192];
                 DownloadStatus status = new DownloadStatus();
@@ -78,10 +74,11 @@ public class ChunkDownloadRunnable implements PriorityRunnable {
                 saveChannel = save.getChannel();
                 MappedByteBuffer saveBuffer = saveChannel.map(READ_WRITE, chunkInfo.start, chunkInfo.end - chunkInfo.start + 1);
 
-                inStream = connection.getInputStream();
+                inStream = response.inputStream;
                 while ((readLen = inStream.read(buffer)) != -1) {
                     saveBuffer.put(buffer, 0, readLen);
-                    recordBuffer.putLong(chunkInfo.rangeIndex * EACH_RECORD_SIZE, recordBuffer.getLong(chunkInfo.rangeIndex * EACH_RECORD_SIZE) + readLen);
+                    recordBuffer.putLong(chunkInfo.rangeIndex * EACH_RECORD_SIZE,
+                            recordBuffer.getLong(chunkInfo.rangeIndex * EACH_RECORD_SIZE) + readLen);
 
                     status.setDownloadSize(totalSize - getResidue(recordBuffer));
                     if (action.isCancelled())
@@ -90,7 +87,7 @@ public class ChunkDownloadRunnable implements PriorityRunnable {
                         action.onProgress(status);
                 }
                 Log.i(TAG, Thread.currentThread().getName() + " complete download! Download size is " +
-                        stringToLong(connection.getHeaderField(Header.CONTENT_LENGTH) + " bytes"));
+                        stringToLong(response.contentLength + " bytes"));
                 if (status.getTotalSize() == status.getDownloadSize() && !action.isCancelled()) {
                     action.onComplete();
                 }
@@ -100,7 +97,6 @@ public class ChunkDownloadRunnable implements PriorityRunnable {
                 Utils.close(save);
                 Utils.close(saveChannel);
                 Utils.close(inStream);
-                connection.disconnect();
                 Log.i(TAG, Thread.currentThread().getName() + " closed thread!");
             }
         } catch (MalformedURLException e) {

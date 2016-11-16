@@ -5,13 +5,13 @@ package com.braindigit.downloader;
  * Created on 11/11/16.
  */
 
-public class ActionStatus {
-    public final DownloadAction downloadAction;
-    public final DownloadStatus downloadStatus;
-    public final Exception e;
+class ActionStatus {
+    final DownloadRequest downloadRequest;
+    final DownloadStatus downloadStatus;
+    final Exception e;
 
-    public ActionStatus(DownloadAction downloadAction, DownloadStatus downloadStatus, Exception e) {
-        this.downloadAction = downloadAction;
+    ActionStatus(DownloadRequest downloadRequest, DownloadStatus downloadStatus, Exception e) {
+        this.downloadRequest = downloadRequest;
         this.downloadStatus = downloadStatus;
         this.e = e;
     }

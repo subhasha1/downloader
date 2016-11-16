@@ -11,10 +11,10 @@ import java.util.concurrent.TimeUnit;
  * Created on 11/10/16.
  */
 
-public class ExecutorService extends ThreadPoolExecutor {
+ class ExecutorService extends ThreadPoolExecutor {
     public static final int DEFAULT_THREAD_COUNT = 3;
 
-    public ExecutorService() {
+     ExecutorService() {
         super(DEFAULT_THREAD_COUNT, DEFAULT_THREAD_COUNT, 0, TimeUnit.MILLISECONDS,
                 new PriorityBlockingQueue<Runnable>(), new Utils.DownloadThreadFactory());
     }

@@ -1,13 +1,6 @@
-package com.braindigit.downloader.types;
+package com.braindigit.downloader;
 
 import android.os.Handler;
-
-import com.braindigit.downloader.Dispatcher;
-import com.braindigit.downloader.DownloadAction;
-import com.braindigit.downloader.Downloader;
-import com.braindigit.downloader.ExecutorService;
-import com.braindigit.downloader.FileInfo;
-import com.braindigit.downloader.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,23 +14,22 @@ import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
 /**
  * Braindigit
- * Created on 11/11/16.
+ * Created on 11/16/16.
  */
 
-public class DownloadTypeMultiThread extends DownloadTypeResumable {
-
-    public DownloadTypeMultiThread(Downloader downloader, Handler mainThreadHandler,
-                                   FileInfo.Destination destination, DownloadAction downloadAction,
-                                   Dispatcher dispatcher) {
-        super(downloader, mainThreadHandler, destination, downloadAction,dispatcher);
+class DockerMultiThread extends DockerResumable {
+    DockerMultiThread(DownloadRequest downloadRequest, Downloader downloader,
+                      Handler mainThreadHandler, FileInfo.Destination destination,
+                      Dispatcher dispatcher, NetworkHelper networkHelper) {
+        super(downloadRequest, downloader, mainThreadHandler, destination, dispatcher, networkHelper);
     }
 
     @Override
-    public void prepareDownload() throws IOException, ParseException {
-        final long fileLength = downloadAction.getFileInfo().getFileLength();
+    void prepareDownload() throws IOException, ParseException {
+        final long fileLength = downloadRequest.getFileInfo().getFileLength();
         final int MAX_THREADS = ExecutorService.DEFAULT_THREAD_COUNT;
         writeLastModify(new File(destination.lastModifiedPath),
-                downloadAction.getFileInfo().getLastModify());
+                downloadRequest.getFileInfo().getLastModify());
         RandomAccessFile rFile = null;
         RandomAccessFile rRecord = null;
         FileChannel channel = null;
@@ -70,5 +62,10 @@ public class DownloadTypeMultiThread extends DownloadTypeResumable {
             Utils.close(rRecord);
             Utils.close(rFile);
         }
+    }
+
+    @Override
+    void startDownload() throws IOException {
+        super.startDownload();
     }
 }

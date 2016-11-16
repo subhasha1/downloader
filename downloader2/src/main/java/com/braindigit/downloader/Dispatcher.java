@@ -5,9 +5,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
 
 /**
@@ -15,7 +12,7 @@ import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
  * Created on 11/10/16.
  */
 
-public class Dispatcher {
+final class Dispatcher {
     private static final String DISPATCHER_THREAD_NAME = "Dispatcher";
 
     static final int REQUEST_SUBMIT = 1;
@@ -27,9 +24,11 @@ public class Dispatcher {
     final DispatcherHandler handler;
     private final Handler mainThreadHandler;
     private final Downloader downloader;
+    final NetworkHelper networkHelper;
 
-    public Dispatcher(Downloader downloader, ExecutorService service, Handler mainThreadHandler) {
+    Dispatcher(Downloader downloader, ExecutorService service, Handler mainThreadHandler, NetworkHelper networkHelper) {
         this.downloader = downloader;
+        this.networkHelper = networkHelper;
         this.dispatcherThread = new DispatcherThread();
         this.dispatcherThread.start();
         this.service = service;
@@ -37,25 +36,25 @@ public class Dispatcher {
         this.handler = new DispatcherHandler(dispatcherThread.getLooper(), this);
     }
 
-    public void dispatchSubmit(DownloadAction downloadAction) {
-        handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, downloadAction));
+    void dispatchSubmit(DownloadRequest downloadRequest) {
+        handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, downloadRequest));
     }
 
     public void dispatchSubmit(ChunkInfo chunkInfo) {
         handler.sendMessage(handler.obtainMessage(REQUEST_CHUNK_SUBMIT, chunkInfo));
     }
 
-    void performSubmit(DownloadAction downloadAction) {
-        DownloadRunnable downloadRunnable = DownloadRunnable.from(downloader, mainThreadHandler,
-                this, downloadAction);
-        service.submit(downloadRunnable);
+    private void performSubmit(DownloadRequest downloadRequest) {
+        DownloadHunter downloadHunter = DownloadHunter.from(downloader, mainThreadHandler,
+                this, downloadRequest, networkHelper);
+        service.submit(downloadHunter);
     }
 
-    void performSubmit(ChunkInfo chunkInfo) {
-        ChunkDownloadRunnable chunkDownloadRunnable =
-                new ChunkDownloadRunnable(downloader, chunkInfo.downloadAction,
-                        mainThreadHandler, chunkInfo);
-        service.submit(chunkDownloadRunnable);
+    private void performSubmit(ChunkInfo chunkInfo) {
+        DockerMultiThreadMinion minion =
+                new DockerMultiThreadMinion(downloader, chunkInfo.downloadRequest,
+                        mainThreadHandler, chunkInfo, networkHelper);
+        service.submit(minion);
     }
 
     private static class DispatcherHandler extends Handler {
@@ -70,7 +69,7 @@ public class Dispatcher {
         public void handleMessage(final Message msg) {
             switch (msg.what) {
                 case REQUEST_SUBMIT: {
-                    DownloadAction action = (DownloadAction) msg.obj;
+                    DownloadRequest action = (DownloadRequest) msg.obj;
                     dispatcher.performSubmit(action);
                     break;
                 }
@@ -90,7 +89,7 @@ public class Dispatcher {
         }
     }
 
-    static class DispatcherThread extends HandlerThread {
+    private static class DispatcherThread extends HandlerThread {
         DispatcherThread() {
             super(Utils.THREAD_PREFIX + DISPATCHER_THREAD_NAME, THREAD_PRIORITY_BACKGROUND);
         }

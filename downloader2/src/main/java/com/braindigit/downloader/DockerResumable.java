@@ -1,16 +1,6 @@
-package com.braindigit.downloader.types;
+package com.braindigit.downloader;
 
 import android.os.Handler;
-
-import com.braindigit.downloader.ChunkInfo;
-import com.braindigit.downloader.Dispatcher;
-import com.braindigit.downloader.DownloadAction;
-import com.braindigit.downloader.DownloadRange;
-import com.braindigit.downloader.DownloadStatus;
-import com.braindigit.downloader.Downloader;
-import com.braindigit.downloader.ExecutorService;
-import com.braindigit.downloader.FileInfo;
-import com.braindigit.downloader.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,45 +8,47 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
 /**
  * Braindigit
- * Created on 11/11/16.
+ * Created on 11/16/16.
  */
 
-public class DownloadTypeResumable extends DownloadType {
+class DockerResumable extends Docker{
     public static final int EACH_RECORD_SIZE = 16;
 
     final int RECORD_FILE_TOTAL_SIZE;
     final int MAX_THREADS = ExecutorService.DEFAULT_THREAD_COUNT;
-
-    public DownloadTypeResumable(Downloader downloader, Handler mainThreadHandler,
-                                 FileInfo.Destination destination, DownloadAction downloadAction,
-                                 Dispatcher dispatcher) {
-        super(downloader, mainThreadHandler, destination, downloadAction,dispatcher);
+    DockerResumable(DownloadRequest downloadRequest, Downloader downloader,
+                    Handler mainThreadHandler, FileInfo.Destination destination,
+                    Dispatcher dispatcher, NetworkHelper networkHelper) {
+        super(downloadRequest, downloader, mainThreadHandler, destination,
+                dispatcher, networkHelper);
         RECORD_FILE_TOTAL_SIZE = EACH_RECORD_SIZE * MAX_THREADS;
     }
 
     @Override
-    public void prepareDownload() throws IOException, ParseException {
+    void prepareDownload() throws IOException, ParseException {
 
     }
 
     @Override
-    public void startDownload() throws IOException {
+    void startDownload() throws IOException {
         DownloadRange range = getDownloadRange();
         for (int i = 0; i < MAX_THREADS; i++) {
             if (range.start[i] <= range.end[i]) {
-                dispatcher.dispatchSubmit(new ChunkInfo(downloadAction.getFileInfo(),
-                        destination, range.start[i],range.end[i], i, downloadAction));
+                dispatcher.dispatchSubmit(new ChunkInfo(downloadRequest.getFileInfo(),
+                        destination, range.start[i],range.end[i], i, downloadRequest));
             }
         }
     }
 
+    @Override
+    boolean canPause() {
+        return true;
+    }
 
     private DownloadRange getDownloadRange() throws IOException {
         RandomAccessFile record = null;

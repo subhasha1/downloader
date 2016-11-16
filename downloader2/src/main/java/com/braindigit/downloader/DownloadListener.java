@@ -5,10 +5,15 @@ package com.braindigit.downloader;
  * Created on 11/9/16.
  */
 
-public interface DownloadListener {
-    void onProgress(DownloadStatus status);
+public abstract class DownloadListener {
 
-    void onComplete();
+    public void onPauseStateIdentified(boolean pausable){
 
-    void onError(Exception e);
+    }
+
+    public abstract void onProgress(DownloadStatus status);
+
+    public abstract void onComplete();
+
+    public abstract void onError(Exception e);
 }

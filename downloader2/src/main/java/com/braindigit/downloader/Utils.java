@@ -1,12 +1,7 @@
 package com.braindigit.downloader;
 
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.os.Process;
 import android.text.TextUtils;
-
-import com.braindigit.downloader.network.Header;
 
 import java.io.Closeable;
 import java.io.File;
@@ -20,6 +15,10 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.ThreadFactory;
 
+import okhttp3.Response;
+
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION_CODES.GINGERBREAD;
 import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
 
 /**
@@ -27,13 +26,13 @@ import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
  * Created on 11/9/16.
  */
 
-public class Utils {
+class Utils {
     static final String THREAD_PREFIX = "LoadTask-";
 
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 15 * 1000;
     public static final int DEFAULT_READ_TIMEOUT_MILLIS = 15 * 1000;
 
-    public static void writeLastModify(File lastModifiedFile, String lastModify) throws IOException, ParseException {
+    static void writeLastModify(File lastModifiedFile, String lastModify) throws IOException, ParseException {
         RandomAccessFile record = null;
         try {
             record = new RandomAccessFile(lastModifiedFile, "rws");
@@ -45,7 +44,7 @@ public class Utils {
         }
     }
 
-    public static long stringToLong(String s) {
+    static long stringToLong(String s) {
         if (s == null) return -1;
         try {
             return Long.parseLong(s);
@@ -54,8 +53,8 @@ public class Utils {
         }
     }
 
-    public static String transferEncoding(HttpURLConnection response) {
-        return response.getHeaderField("Transfer-Encoding");
+    static String transferEncoding(Response response) {
+        return response.header("Transfer-Encoding");
     }
 
     static String longToGMT(long lastModify) {
@@ -75,14 +74,26 @@ public class Utils {
         return date.getTime();
     }
 
-    public static void close(Closeable closeable) throws IOException {
+    static void close(Closeable closeable) throws IOException {
         if (closeable != null) {
             closeable.close();
         }
     }
 
-    public static boolean supportsRange(Header header) {
-        return !TextUtils.isEmpty(header.getContentRange()) || header.getContentLength() > -1;
+    static boolean supportsRange(NetworkHelper.Header header) {
+        return !TextUtils.isEmpty(header.contentRange) || header.contentLength > -1;
+    }
+
+    //    TODO create other network helper types
+    static NetworkHelper createDefaultNetworkHelper() {
+        if (SDK_INT >= GINGERBREAD) {
+            try {
+                Class.forName("okhttp3.OkHttpClient");
+                return new NetworkHelperOkHttp();
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return new NetworkHelperOkHttp();
     }
 
     static class DownloadThreadFactory implements ThreadFactory {
@@ -93,7 +104,7 @@ public class Utils {
     }
 
     private static class DownloadThread extends Thread {
-        public DownloadThread(Runnable r) {
+        DownloadThread(Runnable r) {
             super(r);
         }
 

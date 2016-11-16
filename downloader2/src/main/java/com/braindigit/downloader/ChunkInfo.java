@@ -5,22 +5,22 @@ package com.braindigit.downloader;
  * Created on 11/11/16.
  */
 
-public class ChunkInfo {
+ class ChunkInfo {
     final FileInfo fileInfo;
     final FileInfo.Destination destination;
     final long start;
     final long end;
     final int rangeIndex;
-    final DownloadAction downloadAction;
+    final DownloadRequest downloadRequest;
 
-    public ChunkInfo(FileInfo fileInfo,
+     ChunkInfo(FileInfo fileInfo,
                      FileInfo.Destination destination,
-                     long start, long end, int rangeIndex, DownloadAction downloadAction) {
+                     long start, long end, int rangeIndex, DownloadRequest downloadRequest) {
         this.fileInfo = fileInfo;
         this.destination = destination;
         this.start = start;
         this.end = end;
         this.rangeIndex = rangeIndex;
-        this.downloadAction = downloadAction;
+        this.downloadRequest = downloadRequest;
     }
 }

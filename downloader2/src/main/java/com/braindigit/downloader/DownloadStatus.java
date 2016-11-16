@@ -14,7 +14,7 @@ public class DownloadStatus {
         return downloadSize;
     }
 
-    public void setDownloadSize(long downloadSize) {
+    void setDownloadSize(long downloadSize) {
         this.downloadSize = downloadSize;
     }
 
@@ -22,7 +22,7 @@ public class DownloadStatus {
         return totalSize;
     }
 
-    public void setTotalSize(long totalSize) {
+    void setTotalSize(long totalSize) {
         this.totalSize = totalSize;
     }
 }

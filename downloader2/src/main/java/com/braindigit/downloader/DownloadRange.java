@@ -1,10 +1,10 @@
 package com.braindigit.downloader;
 
-public class DownloadRange {
+ class DownloadRange {
     public long[] start;
     public long[] end;
 
-    public DownloadRange(long[] start, long[] end) {
+     DownloadRange(long[] start, long[] end) {
         this.start = start;
         this.end = end;
     }
