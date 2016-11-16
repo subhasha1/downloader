@@ -36,8 +36,12 @@ public final class DownloadRequest {
 
     public void cancel() {
         isCancelled = true;
-        if (!downloadListeners.isEmpty())
+        if (!downloadListeners.isEmpty()) {
+            for (DownloadListener listener : downloadListeners) {
+                listener.onCancelled();
+            }
             downloadListeners.clear();
+        }
     }
 
     public void addListener(DownloadListener downloadListener) {
